@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# rsi-start — start a stopped agent container
+source "$(dirname "$0")/../lib/common.sh"
+
+if [[ $# -lt 1 ]]; then
+    echo "Usage: rsi start <name>"
+    exit 1
+fi
+
+name="$1"
+require_container "$name"
+
+cn="$(container_name "$name")"
+
+if container_running "$name"; then
+    echo "Agent '${name}' is already running."
+    exit 0
+fi
+
+echo "Starting agent '${name}'..."
+sudo "$NIXOS_CONTAINER" start "$cn"
+echo "Agent '${name}' started."

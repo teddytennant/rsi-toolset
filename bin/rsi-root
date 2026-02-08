@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# rsi-root — root shell into container
+source "$(dirname "$0")/../lib/common.sh"
+
+if [[ $# -lt 1 ]]; then
+    echo "Usage: rsi root <name>"
+    exit 1
+fi
+
+name="$1"
+require_running "$name"
+
+cn="$(container_name "$name")"
+
+exec sudo "$NIXOS_CONTAINER" root-login "$cn"

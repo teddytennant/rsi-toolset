@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+# rsi-create — create a new agent container
+source "$(dirname "$0")/../lib/common.sh"
+
+usage() {
+    echo "Usage: rsi create <name> [profile]"
+    echo ""
+    echo "  name     Agent name (max ${MAX_NAME_LEN} chars, lowercase alphanumeric)"
+    echo "  profile  Profile to use: default, minimal (default: default)"
+}
+
+if [[ $# -lt 1 ]]; then
+    usage
+    exit 1
+fi
+
+name="$1"
+profile="${2:-default}"
+
+validate_name "$name"
+require_not_exists "$name"
+
+cn="$(container_name "$name")"
+config_file="${RSI_ROOT}/profiles/${profile}.nix"
+
+if [[ ! -f "$config_file" ]]; then
+    echo "Error: profile '${profile}' not found at ${config_file}" >&2
+    exit 1
+fi
+
+echo "Creating agent '${name}' with profile '${profile}'..."
+sudo "$NIXOS_CONTAINER" create "$cn" --config-file "$config_file"
+
+# Start the container to initialize it
+echo "Starting agent '${name}'..."
+sudo "$NIXOS_CONTAINER" start "$cn"
+
+# Copy workspace skeleton if it exists
+skel_dir="${RSI_ROOT}/workspace/skel"
+if [[ -d "$skel_dir" ]]; then
+    echo "Installing workspace skeleton..."
+    # Get the container root
+    container_root="/var/lib/nixos-containers/${cn}"
+    sudo cp -rT "$skel_dir" "${container_root}/home/agent/"
+    sudo "$NIXOS_CONTAINER" run "$cn" -- chown -R agent:users /home/agent/
+    # Make any scripts executable
+    if [[ -d "${container_root}/home/agent/.local/bin" ]]; then
+        sudo "$NIXOS_CONTAINER" run "$cn" -- chmod +x /home/agent/.local/bin/*
+    fi
+fi
+
+echo ""
+echo "Agent '${name}' created and running."
+echo "  Shell in:  rsi shell ${name}"
+echo "  Root:      rsi root ${name}"

@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# rsi-stop — stop a running agent container
+source "$(dirname "$0")/../lib/common.sh"
+
+if [[ $# -lt 1 ]]; then
+    echo "Usage: rsi stop <name>"
+    exit 1
+fi
+
+name="$1"
+require_container "$name"
+
+cn="$(container_name "$name")"
+
+if ! container_running "$name"; then
+    echo "Agent '${name}' is already stopped."
+    exit 0
+fi
+
+echo "Stopping agent '${name}'..."
+sudo "$NIXOS_CONTAINER" stop "$cn"
+echo "Agent '${name}' stopped."

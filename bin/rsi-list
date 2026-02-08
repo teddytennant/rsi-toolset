@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# rsi-list — list all agent containers
+source "$(dirname "$0")/../lib/common.sh"
+
+containers="$(sudo "$NIXOS_CONTAINER" list 2>/dev/null)"
+
+if [[ -z "$containers" ]]; then
+    echo "No agent containers found."
+    exit 0
+fi
+
+printf "%-12s  %s\n" "NAME" "STATUS"
+printf "%-12s  %s\n" "----" "------"
+
+while IFS= read -r cn; do
+    # Only show rsi- prefixed containers
+    if [[ "$cn" == ${RSI_PREFIX}* ]]; then
+        agent_name="${cn#${RSI_PREFIX}}"
+        status="$(sudo "$NIXOS_CONTAINER" status "$cn" 2>/dev/null || echo "unknown")"
+        printf "%-12s  %s\n" "$agent_name" "$status"
+    fi
+done <<< "$containers"

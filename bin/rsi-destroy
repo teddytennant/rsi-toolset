@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# rsi-destroy — destroy an agent container
+source "$(dirname "$0")/../lib/common.sh"
+
+if [[ $# -lt 1 ]]; then
+    echo "Usage: rsi destroy <name>"
+    exit 1
+fi
+
+name="$1"
+require_container "$name"
+
+cn="$(container_name "$name")"
+
+# Stop if running
+if container_running "$name"; then
+    echo "Stopping agent '${name}'..."
+    sudo "$NIXOS_CONTAINER" stop "$cn"
+fi
+
+echo "Destroying agent '${name}'..."
+sudo "$NIXOS_CONTAINER" destroy "$cn"
+echo "Agent '${name}' destroyed."

@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+# rsi — main CLI dispatcher for rsi-toolset
+set -euo pipefail
+
+RSI_BIN="$(cd "$(dirname "$0")" && pwd)"
+
+usage() {
+    cat <<'EOF'
+Usage: rsi <command> [args...]
+
+Agent lifecycle:
+  create  <name> [profile]   Create a new agent container
+  destroy <name>             Destroy an agent container
+  start   <name>             Start a stopped container
+  stop    <name>             Stop a running container
+  list                       List all agent containers
+
+Access:
+  shell   <name>             Shell into container as agent
+  root    <name>             Root shell into container
+  run     <name> <cmd...>    Run a command inside container
+
+Setup:
+  ssh-setup  <name>          Generate SSH keys for agent
+  gh-auth    <name>          Set up GitHub authentication
+
+Maintenance:
+  snapshot <name>            Snapshot agent home directory
+  restore  <name> [snap]     Restore from snapshot
+  update   <name>            Rebuild container with latest config
+EOF
+}
+
+if [[ $# -eq 0 ]]; then
+    usage
+    exit 0
+fi
+
+cmd="$1"
+shift
+
+script="${RSI_BIN}/rsi-${cmd}"
+if [[ -x "$script" ]]; then
+    exec "$script" "$@"
+else
+    echo "Error: unknown command '${cmd}'" >&2
+    echo "Run 'rsi' with no arguments to see available commands" >&2
+    exit 1
+fi
