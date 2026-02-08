@@ -1,0 +1,6 @@
+# Snapshots (large, machine-specific)
+.snapshots/
+
+# Nix build artifacts
+result
+result-*

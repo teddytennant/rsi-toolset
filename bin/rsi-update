@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# rsi-update — rebuild container with latest config
+source "$(dirname "$0")/../lib/common.sh"
+
+if [[ $# -lt 1 ]]; then
+    echo "Usage: rsi update <name>"
+    exit 1
+fi
+
+name="$1"
+require_container "$name"
+
+cn="$(container_name "$name")"
+
+echo "Updating agent '${name}' configuration..."
+sudo "$NIXOS_CONTAINER" update "$cn" 2>&1
+
+# Restart if running
+if container_running "$name"; then
+    echo "Restarting agent '${name}'..."
+    sudo "$NIXOS_CONTAINER" stop "$cn"
+    sudo "$NIXOS_CONTAINER" start "$cn"
+fi
+
+echo "Agent '${name}' updated."

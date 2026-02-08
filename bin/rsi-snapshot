@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# rsi-snapshot — snapshot agent home directory
+source "$(dirname "$0")/../lib/common.sh"
+
+if [[ $# -lt 1 ]]; then
+    echo "Usage: rsi snapshot <name>"
+    exit 1
+fi
+
+name="$1"
+require_container "$name"
+
+cn="$(container_name "$name")"
+container_root="/var/lib/nixos-containers/${cn}"
+snapshot_dir="${RSI_ROOT}/.snapshots/${name}"
+timestamp="$(date +%Y%m%d-%H%M%S)"
+snap_path="${snapshot_dir}/${timestamp}"
+
+mkdir -p "$snap_path"
+
+echo "Snapshotting agent '${name}' home directory..."
+sudo rsync -a --info=progress2 "${container_root}/home/agent/" "${snap_path}/"
+
+echo "Snapshot saved: ${snap_path}"
+echo ""
+
+# Show recent snapshots
+echo "Snapshots for '${name}':"
+ls -1t "$snapshot_dir" | head -5

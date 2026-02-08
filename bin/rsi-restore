@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+# rsi-restore — restore agent home directory from snapshot
+source "$(dirname "$0")/../lib/common.sh"
+
+if [[ $# -lt 1 ]]; then
+    echo "Usage: rsi restore <name> [snapshot]"
+    echo ""
+    echo "  If no snapshot specified, uses the most recent one."
+    exit 1
+fi
+
+name="$1"
+snapshot="${2:-}"
+require_container "$name"
+
+cn="$(container_name "$name")"
+container_root="/var/lib/nixos-containers/${cn}"
+snapshot_dir="${RSI_ROOT}/.snapshots/${name}"
+
+if [[ ! -d "$snapshot_dir" ]]; then
+    echo "Error: no snapshots found for agent '${name}'" >&2
+    exit 1
+fi
+
+if [[ -z "$snapshot" ]]; then
+    snapshot="$(ls -1t "$snapshot_dir" | head -1)"
+    if [[ -z "$snapshot" ]]; then
+        echo "Error: no snapshots found for agent '${name}'" >&2
+        exit 1
+    fi
+    echo "Using most recent snapshot: ${snapshot}"
+fi
+
+snap_path="${snapshot_dir}/${snapshot}"
+if [[ ! -d "$snap_path" ]]; then
+    echo "Error: snapshot '${snapshot}' not found" >&2
+    echo "Available snapshots:"
+    ls -1t "$snapshot_dir"
+    exit 1
+fi
+
+echo "Restoring agent '${name}' from snapshot '${snapshot}'..."
+sudo rsync -a --delete --info=progress2 "${snap_path}/" "${container_root}/home/agent/"
+sudo "$NIXOS_CONTAINER" run "$cn" -- chown -R agent:users /home/agent/ 2>/dev/null || true
+
+echo "Restore complete."
