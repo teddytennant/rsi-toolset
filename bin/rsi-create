@@ -45,7 +45,7 @@ if [[ -d "$skel_dir" ]]; then
     sudo "$NIXOS_CONTAINER" run "$cn" -- chown -R agent:users /home/agent/
     # Make any scripts executable
     if [[ -d "${container_root}/home/agent/.local/bin" ]]; then
-        sudo "$NIXOS_CONTAINER" run "$cn" -- chmod +x /home/agent/.local/bin/*
+        sudo "$NIXOS_CONTAINER" run "$cn" -- bash -c 'find /home/agent/.local/bin -type f -exec chmod +x {} +'
     fi
 fi
 

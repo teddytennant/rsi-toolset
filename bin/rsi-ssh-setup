@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# rsi-ssh-setup — generate SSH keys for an agent container
+source "$(dirname "$0")/../lib/common.sh"
+
+if [[ $# -lt 1 ]]; then
+    echo "Usage: rsi ssh-setup <name>"
+    exit 1
+fi
+
+name="$1"
+require_running "$name"
+
+cn="$(container_name "$name")"
+
+echo "Generating SSH key for agent '${name}'..."
+sudo "$NIXOS_CONTAINER" run "$cn" -- su -l agent -c \
+    "mkdir -p ~/.ssh && chmod 700 ~/.ssh && ssh-keygen -t ed25519 -C 'agent@${cn}' -N '' -f ~/.ssh/id_ed25519 2>/dev/null || true"
+
+echo ""
+echo "Public key for agent '${name}':"
+echo "---"
+sudo "$NIXOS_CONTAINER" run "$cn" -- su -l agent -c "cat ~/.ssh/id_ed25519.pub"
+echo "---"
+echo ""
+echo "Add this key to GitHub: https://github.com/settings/ssh/new"

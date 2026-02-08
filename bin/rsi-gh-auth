@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# rsi-gh-auth — set up GitHub authentication in an agent container
+source "$(dirname "$0")/../lib/common.sh"
+
+if [[ $# -lt 1 ]]; then
+    echo "Usage: rsi gh-auth <name> [token]"
+    echo ""
+    echo "  If no token provided, copies host gh credentials into the container."
+    echo "  If token provided, authenticates with that token."
+    exit 1
+fi
+
+name="$1"
+token="${2:-}"
+require_running "$name"
+
+cn="$(container_name "$name")"
+container_root="/var/lib/nixos-containers/${cn}"
+
+if [[ -n "$token" ]]; then
+    echo "Authenticating with provided token..."
+    echo "$token" | sudo "$NIXOS_CONTAINER" run "$cn" -- su -l agent -c "gh auth login --with-token"
+else
+    # Copy host gh config
+    host_gh_dir="/home/nixos/.config/gh"
+    if [[ ! -d "$host_gh_dir" ]]; then
+        echo "Error: no gh config found on host at ${host_gh_dir}" >&2
+        echo "Run 'gh auth login' on the host first, or provide a token:" >&2
+        echo "  rsi gh-auth ${name} <token>" >&2
+        exit 1
+    fi
+
+    echo "Copying host GitHub credentials to agent '${name}'..."
+    sudo "$NIXOS_CONTAINER" run "$cn" -- su -l agent -c "mkdir -p ~/.config/gh"
+    sudo cp "${host_gh_dir}/hosts.yml" "${container_root}/home/agent/.config/gh/hosts.yml" 2>/dev/null || true
+    sudo "$NIXOS_CONTAINER" run "$cn" -- chown -R agent:users /home/agent/.config/gh
+fi
+
+# Verify
+echo ""
+echo "Verifying GitHub authentication..."
+sudo "$NIXOS_CONTAINER" run "$cn" -- su -l agent -c "gh auth status" 2>&1 || true

@@ -1,0 +1,14 @@
+[init]
+    defaultBranch = main
+
+[core]
+    editor = vim
+
+[pull]
+    rebase = true
+
+[push]
+    autoSetupRemote = true
+
+[credential "https://github.com"]
+    helper = !/run/current-system/sw/bin/gh auth git-credential
