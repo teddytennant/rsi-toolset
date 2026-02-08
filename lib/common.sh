@@ -46,7 +46,7 @@ container_exists() {
 container_running() {
     local cn
     cn="$(container_name "$1")"
-    sudo "$NIXOS_CONTAINER" status "$cn" 2>/dev/null | grep -q "Up"
+    sudo "$NIXOS_CONTAINER" status "$cn" 2>/dev/null | grep -qi "up"
 }
 
 require_container() {
