@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 # rsi-create — create a new agent container
 source "$(dirname "$0")/../lib/common.sh"
 
@@ -17,6 +18,30 @@ fi
 name="$1"
 profile="${2:-default}"
 
+# Validate container name: alphanumeric and hyphens only, max 7 chars
+if [[ ! "$name" =~ ^[a-zA-Z][a-zA-Z0-9-]*$ ]]; then
+    echo "Error: container name must start with a letter and contain only alphanumeric characters and hyphens" >&2
+    exit 1
+fi
+if [[ ${#name} -gt $MAX_NAME_LEN ]]; then
+    echo "Error: container name '${name}' exceeds max length of ${MAX_NAME_LEN} characters" >&2
+    exit 1
+fi
+
+# Validate profile name: only allow known profiles
+valid_profiles=("default" "minimal")
+profile_valid=false
+for vp in "${valid_profiles[@]}"; do
+    if [[ "$profile" == "$vp" ]]; then
+        profile_valid=true
+        break
+    fi
+done
+if [[ "$profile_valid" != true ]]; then
+    echo "Error: unknown profile '${profile}'. Valid profiles: ${valid_profiles[*]}" >&2
+    exit 1
+fi
+
 validate_name "$name"
 require_not_exists "$name"
 
@@ -28,8 +53,21 @@ if [[ ! -f "$config_file" ]]; then
     exit 1
 fi
 
+# Clean up partial container on failure
+container_created=false
+cleanup() {
+    local rc=$?
+    if [[ $rc -ne 0 && "$container_created" == true ]]; then
+        echo "Error: creation failed, cleaning up..." >&2
+        sudo "$NIXOS_CONTAINER" destroy "$cn" 2>/dev/null || true
+    fi
+    return $rc
+}
+trap cleanup EXIT
+
 echo "Creating agent '${name}' with profile '${profile}'..."
 sudo "$NIXOS_CONTAINER" create "$cn" --config-file "$config_file"
+container_created=true
 
 # Start the container to initialize it
 echo "Starting agent '${name}'..."

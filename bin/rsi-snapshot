@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 # rsi-snapshot — snapshot agent home directory
 source "$(dirname "$0")/../lib/common.sh"
 

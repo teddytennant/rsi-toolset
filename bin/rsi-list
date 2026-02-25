@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 # rsi-list — list all agent containers
 source "$(dirname "$0")/../lib/common.sh"
 

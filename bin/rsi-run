@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 # rsi-run — run a command inside container as agent
 source "$(dirname "$0")/../lib/common.sh"
 
@@ -13,4 +14,4 @@ require_running "$name"
 
 cn="$(container_name "$name")"
 
-sudo "$NIXOS_CONTAINER" run "$cn" -- su -l agent -c "$*"
+sudo "$NIXOS_CONTAINER" run "$cn" -- su -l agent -c "$(printf '%q ' "$@")"

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 # rsi-start — start a stopped agent container
 source "$(dirname "$0")/../lib/common.sh"
 

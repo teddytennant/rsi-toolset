@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 # rsi-update — rebuild container with latest config
 source "$(dirname "$0")/../lib/common.sh"
 

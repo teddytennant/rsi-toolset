@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -euo pipefail
 # rsi-gh-auth — set up GitHub authentication in an agent container
 source "$(dirname "$0")/../lib/common.sh"
 
@@ -19,7 +20,13 @@ container_root="/var/lib/nixos-containers/${cn}"
 
 if [[ -n "$token" ]]; then
     echo "Authenticating with provided token..."
-    echo "$token" | sudo "$NIXOS_CONTAINER" run "$cn" -- su -l agent -c "gh auth login --with-token"
+    # Write token to a temporary file with restrictive permissions to avoid
+    # leaking it through /proc/*/cmdline or process listings
+    token_file="$(mktemp)"
+    chmod 0600 "$token_file"
+    printf '%s' "$token" > "$token_file"
+    sudo "$NIXOS_CONTAINER" run "$cn" -- su -l agent -c "gh auth login --with-token" < "$token_file"
+    rm -f "$token_file"
 else
     # Copy host gh config
     host_gh_dir="/home/nixos/.config/gh"
@@ -32,7 +39,18 @@ else
 
     echo "Copying host GitHub credentials to agent '${name}'..."
     sudo "$NIXOS_CONTAINER" run "$cn" -- su -l agent -c "mkdir -p ~/.config/gh"
-    sudo cp "${host_gh_dir}/hosts.yml" "${container_root}/home/agent/.config/gh/hosts.yml" 2>/dev/null || true
+
+    src="${host_gh_dir}/hosts.yml"
+    dst="${container_root}/home/agent/.config/gh/hosts.yml"
+    if [[ -f "$src" ]]; then
+        if ! sudo cp "$src" "$dst"; then
+            echo "Error: failed to copy ${src} to ${dst}" >&2
+            exit 1
+        fi
+    else
+        echo "Warning: ${src} not found, skipping credential copy" >&2
+    fi
+
     sudo "$NIXOS_CONTAINER" run "$cn" -- chown -R agent:users /home/agent/.config/gh
 fi
 
