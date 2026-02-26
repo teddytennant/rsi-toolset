@@ -13,6 +13,7 @@ fi
 
 name="$1"
 token="${2:-}"
+validate_name "$name"
 require_running "$name"
 
 cn="$(container_name "$name")"
@@ -23,10 +24,14 @@ if [[ -n "$token" ]]; then
     # Write token to a temporary file with restrictive permissions to avoid
     # leaking it through /proc/*/cmdline or process listings
     token_file="$(mktemp)"
+    # Ensure token file is always cleaned up, even on error
+    cleanup_token() { rm -f "$token_file"; }
+    trap cleanup_token EXIT
     chmod 0600 "$token_file"
     printf '%s' "$token" > "$token_file"
     sudo "$NIXOS_CONTAINER" run "$cn" -- su -l agent -c "gh auth login --with-token" < "$token_file"
     rm -f "$token_file"
+    trap - EXIT
 else
     # Copy host gh config
     host_gh_dir="/home/nixos/.config/gh"
