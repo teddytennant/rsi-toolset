@@ -10,14 +10,24 @@ if [[ -z "$containers" ]]; then
     exit 0
 fi
 
-printf "%-12s  %s\n" "NAME" "STATUS"
-printf "%-12s  %s\n" "----" "------"
+found=false
+output=""
 
 while IFS= read -r cn; do
     # Only show rsi- prefixed containers
     if [[ "$cn" == ${RSI_PREFIX}* ]]; then
+        found=true
         agent_name="${cn#${RSI_PREFIX}}"
         status="$(sudo "$NIXOS_CONTAINER" status "$cn" 2>/dev/null || echo "unknown")"
-        printf "%-12s  %s\n" "$agent_name" "$status"
+        output+="$(printf "%-12s  %s\n" "$agent_name" "$status")"$'\n'
     fi
 done <<< "$containers"
+
+if [[ "$found" != true ]]; then
+    echo "No agent containers found."
+    exit 0
+fi
+
+printf "%-12s  %s\n" "NAME" "STATUS"
+printf "%-12s  %s\n" "----" "------"
+printf '%s' "$output"
