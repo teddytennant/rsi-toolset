@@ -9,6 +9,7 @@ if [[ $# -lt 1 ]]; then
 fi
 
 name="$1"
+validate_name "$name"
 require_container "$name"
 
 cn="$(container_name "$name")"
