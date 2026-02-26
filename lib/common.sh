@@ -40,7 +40,7 @@ validate_name() {
 container_exists() {
     local cn
     cn="$(container_name "$1")"
-    sudo "$NIXOS_CONTAINER" list 2>/dev/null | grep -qw "$cn"
+    sudo "$NIXOS_CONTAINER" list 2>/dev/null | grep -qx "$cn"
 }
 
 container_running() {
