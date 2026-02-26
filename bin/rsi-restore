@@ -12,6 +12,7 @@ fi
 
 name="$1"
 snapshot="${2:-}"
+validate_name "$name"
 require_container "$name"
 
 cn="$(container_name "$name")"
@@ -30,6 +31,12 @@ if [[ -z "$snapshot" ]]; then
         exit 1
     fi
     echo "Using most recent snapshot: ${snapshot}"
+fi
+
+# Validate snapshot name to prevent path traversal (must be YYYYMMDD-HHMMSS format)
+if [[ ! "$snapshot" =~ ^[0-9]{8}-[0-9]{6}$ ]]; then
+    echo "Error: invalid snapshot name '${snapshot}' (expected YYYYMMDD-HHMMSS format)" >&2
+    exit 1
 fi
 
 snap_path="${snapshot_dir}/${snapshot}"
