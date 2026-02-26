@@ -18,12 +18,12 @@ log() {
 
 pass() {
     echo "  PASS: $1"
-    (( PASSED++ ))
+    (( PASSED++ )) || true
 }
 
 fail() {
     echo "  FAIL: $1" >&2
-    (( FAILED++ ))
+    (( FAILED++ )) || true
 }
 
 cleanup() {
