@@ -18,10 +18,20 @@ snapshot_dir="${RSI_ROOT}/.snapshots/${name}"
 timestamp="$(date +%Y%m%d-%H%M%S)"
 snap_path="${snapshot_dir}/${timestamp}"
 
+src_dir="${container_root}/home/agent"
+if ! sudo test -d "$src_dir"; then
+    echo "Error: agent home directory not found at ${src_dir}" >&2
+    exit 1
+fi
+
 mkdir -p "$snap_path"
 
 echo "Snapshotting agent '${name}' home directory..."
-sudo rsync -a --info=progress2 "${container_root}/home/agent/" "${snap_path}/"
+if ! sudo rsync -a --info=progress2 "${src_dir}/" "${snap_path}/"; then
+    echo "Error: snapshot failed, cleaning up partial snapshot" >&2
+    rm -rf "$snap_path"
+    exit 1
+fi
 
 echo "Snapshot saved: ${snap_path}"
 echo ""
