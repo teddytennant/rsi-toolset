@@ -12,6 +12,8 @@
   networking.nat = {
     enable = true;
     internalInterfaces = [ "ve-+" ];
+    # IMPORTANT: Change this to match your host's network interface.
+    # Find yours with: ip route show default | awk '{print $5}'
     externalInterface = "enp4s0";
   };
 }
