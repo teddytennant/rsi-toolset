@@ -34,7 +34,7 @@ if [[ -n "$token" ]]; then
     trap - EXIT
 else
     # Copy host gh config
-    host_gh_dir="/home/nixos/.config/gh"
+    host_gh_dir="${HOME}/.config/gh"
     if [[ ! -d "$host_gh_dir" ]]; then
         echo "Error: no gh config found on host at ${host_gh_dir}" >&2
         echo "Run 'gh auth login' on the host first, or provide a token:" >&2
