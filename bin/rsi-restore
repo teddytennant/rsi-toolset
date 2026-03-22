@@ -47,6 +47,18 @@ if [[ ! -d "$snap_path" ]]; then
     exit 1
 fi
 
+# Warn if container is running — restoring under a live system risks corruption
+if container_running "$name"; then
+    echo "Warning: agent '${name}' is running. Restoring while running may cause data corruption." >&2
+    echo "Consider stopping it first: rsi stop ${name}" >&2
+    echo ""
+    read -r -p "Continue anyway? [y/N] " confirm
+    if [[ "$confirm" != [yY] ]]; then
+        echo "Aborted."
+        exit 1
+    fi
+fi
+
 echo "Restoring agent '${name}' from snapshot '${snapshot}'..."
 sudo rsync -a --delete --info=progress2 "${snap_path}/" "${container_root}/home/agent/"
 sudo "$NIXOS_CONTAINER" run "$cn" -- chown -R agent:users /home/agent/ 2>/dev/null || true
