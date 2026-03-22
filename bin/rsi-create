@@ -64,6 +64,18 @@ container_created=true
 echo "Starting agent '${name}'..."
 sudo "$NIXOS_CONTAINER" start "$cn"
 
+# Wait for the container to be fully booted before running commands
+echo "Waiting for agent to boot..."
+for i in $(seq 1 30); do
+    if sudo "$NIXOS_CONTAINER" run "$cn" -- true 2>/dev/null; then
+        break
+    fi
+    if [[ $i -eq 30 ]]; then
+        echo "Warning: container may not be fully booted yet" >&2
+    fi
+    sleep 1
+done
+
 # Copy workspace skeleton if it exists
 skel_dir="${RSI_ROOT}/workspace/skel"
 if [[ -d "$skel_dir" ]]; then
